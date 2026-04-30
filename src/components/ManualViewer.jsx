@@ -29,8 +29,10 @@ function parseToTree(content) {
   return tree;
 }
 
-function TreeNode({ node, depth = 0, searchQuery }) {
+function TreeNode({ node, depth = 0, searchQuery, onDelete }) {
   const [open, setOpen] = useState(depth < 2);
+  const [editing, setEditing] = useState(false);
+  const [editVal, setEditVal] = useState(node.label);
   const hasChildren = node.children && node.children.length > 0;
   const isMatch = searchQuery && node.label.toLowerCase().includes(searchQuery.toLowerCase());
 
@@ -41,39 +43,81 @@ function TreeNode({ node, depth = 0, searchQuery }) {
     return (<>{text.slice(0, idx)}<mark style={{ background:'#ffe5a0', borderRadius:'3px', padding:'0 2px' }}>{text.slice(idx, idx + searchQuery.length)}</mark>{text.slice(idx + searchQuery.length)}</>);
   };
 
-  const colors    = ['#1a1a1a', '#3d6b8a', '#6b8a3d', '#8a6b3d'];
-  const sizes     = ['1rem', '.95rem', '.88rem', '.83rem'];
-  const weights   = [700, 600, 500, 400];
+  const colors  = ['#1a1a1a', '#3d6b8a', '#6b8a3d', '#8a6b3d'];
+  const sizes   = ['1rem', '.95rem', '.88rem', '.83rem'];
+  const weights = [700, 600, 500, 400];
 
   return (
     <div style={{ marginLeft: depth > 0 ? '1rem' : '0' }}>
-      <div
-        onClick={() => hasChildren && setOpen(!open)}
-        style={{
-          display:'flex', alignItems:'center', gap:'.5rem',
-          padding:'.4rem .75rem', borderRadius:'8px',
-          cursor: hasChildren ? 'pointer' : 'default',
-          background: isMatch ? '#fffbe8' : 'transparent',
-          border: isMatch ? '1px solid #ffe5a0' : '1px solid transparent',
-          marginBottom:'.1rem'
-        }}
-      >
-        <span style={{ fontSize:'.72rem', color:'#a09b94', width:'14px', flexShrink:0 }}>
+      <div style={{
+        display:'flex', alignItems:'center', gap:'.5rem',
+        padding:'.4rem .75rem', borderRadius:'8px',
+        background: isMatch ? '#fffbe8' : 'transparent',
+        border: isMatch ? '1px solid #ffe5a0' : '1px solid transparent',
+        marginBottom:'.1rem'
+      }}>
+        {/* 펼치기 아이콘 */}
+        <span
+          onClick={() => hasChildren && setOpen(!open)}
+          style={{ fontSize:'.72rem', color:'#a09b94', width:'14px', flexShrink:0, cursor: hasChildren ? 'pointer' : 'default' }}
+        >
           {hasChildren ? (open ? '▼' : '▶') : '•'}
         </span>
-        <span style={{ fontSize: sizes[Math.min(depth, 3)], fontWeight: weights[Math.min(depth, 3)], color: colors[Math.min(depth, 3)], lineHeight:1.5 }}>
-          {highlight(node.label)}
-        </span>
+
+        {/* 라벨 or 편집창 */}
+        {editing ? (
+          <input
+            value={editVal}
+            onChange={e => setEditVal(e.target.value)}
+            autoFocus
+            style={{
+              flex:1, padding:'.2rem .5rem', borderRadius:'6px',
+              border:'1px solid #1a1a1a', fontSize: sizes[Math.min(depth, 3)],
+              outline:'none', fontFamily:'inherit'
+            }}
+          />
+        ) : (
+          <span
+            onClick={() => hasChildren && setOpen(!open)}
+            style={{ flex:1, fontSize: sizes[Math.min(depth, 3)], fontWeight: weights[Math.min(depth, 3)], color: colors[Math.min(depth, 3)], lineHeight:1.5, cursor: hasChildren ? 'pointer' : 'default' }}
+          >
+            {highlight(node.label)}
+          </span>
+        )}
+
+        {/* 편집/삭제 버튼 */}
+        <div style={{ display:'flex', gap:'.25rem', flexShrink:0, opacity: 0.6 }}>
+          {editing ? (
+            <>
+              <button
+                onClick={() => { node.label = editVal; setEditing(false); if (onDelete) onDelete('edit', node.id, editVal); }}
+                style={{ background:'#1a1a1a', color:'#fff', border:'none', borderRadius:'4px', padding:'2px 6px', fontSize:'.7rem', cursor:'pointer' }}
+              >✓</button>
+              <button
+                onClick={() => { setEditing(false); setEditVal(node.label); }}
+                style={{ background:'transparent', border:'1px solid #e2ddd5', borderRadius:'4px', padding:'2px 6px', fontSize:'.7rem', cursor:'pointer', color:'#6b6560' }}
+              >✕</button>
+            </>
+          ) : (
+            <button
+              onClick={() => onDelete && onDelete('delete', node.id)}
+              style={{ background:'transparent', border:'none', cursor:'pointer', color:'#ccc', fontSize:'.8rem', padding:'0 2px' }}
+              title="삭제"
+            >×</button>
+          )}
+        </div>
+
         {hasChildren && (
-          <span style={{ marginLeft:'auto', fontSize:'.68rem', color:'#a09b94', background:'#f0ede6', padding:'1px 6px', borderRadius:'10px', flexShrink:0 }}>
+          <span style={{ fontSize:'.68rem', color:'#a09b94', background:'#f0ede6', padding:'1px 6px', borderRadius:'10px', flexShrink:0 }}>
             {node.children.length}
           </span>
         )}
       </div>
+
       {hasChildren && open && (
         <div style={{ borderLeft:'2px solid #e2ddd5', marginLeft:'.85rem', paddingLeft:'.25rem', marginBottom:'.2rem' }}>
           {node.children.map(child => (
-            <TreeNode key={child.id} node={child} depth={depth + 1} searchQuery={searchQuery} />
+            <TreeNode key={child.id} node={child} depth={depth + 1} searchQuery={searchQuery} onDelete={onDelete} />
           ))}
         </div>
       )}
