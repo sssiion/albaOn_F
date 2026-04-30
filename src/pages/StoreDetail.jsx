@@ -4,6 +4,8 @@ import { getStore } from '../api/stores';
 import { getManuals, createManual, deleteManual } from '../api/manuals';
 import { getChatLogs } from '../api/chat';
 import AudioUpload from '../components/AudioUpload';
+import { getManuals, createManual, deleteManual, updateManual } from '../api/manuals';
+import ManualViewer from '../components/ManualViewer';
 
 export default function StoreDetail() {
   const { storeId } = useParams();
@@ -92,7 +94,10 @@ export default function StoreDetail() {
       }}>
         {[
           { key:'manual', label:'📝 매뉴얼 관리' },
+          { key:'view',   label:'📖 매뉴얼 보기' },  
           { key:'logs',   label:`💬 질문 로그 ${unansweredLogs.length > 0 ? `(미답변 ${unansweredLogs.length})` : ''}` }
+      
+      
         ].map(t => (
           <button
             key={t.key}
@@ -197,7 +202,14 @@ export default function StoreDetail() {
             )}
           </>
         )}
-
+        {/* 매뉴얼 보기 탭 */}
+        {tab === 'view' && (
+          <ManualViewer
+            storeId={storeId}
+            manuals={manuals}
+            onUpdate={loadManuals}
+          />
+        )}
         {/* 질문 로그 탭 */}
         {tab === 'logs' && (
           <>
