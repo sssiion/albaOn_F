@@ -17,11 +17,14 @@ api.interceptors.response.use(
   res => res,
   err => {
     if (err.response?.status === 401) {
-      localStorage.removeItem('albaon_token');
-      window.location.href = '/login';
+      const path = window.location.pathname;
+      // chat, join 페이지는 로그인으로 안 보냄
+      if (!path.startsWith('/chat') && !path.startsWith('/join')) {
+        localStorage.removeItem('albaon_token');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(err);
   }
 );
-
 export default api;
