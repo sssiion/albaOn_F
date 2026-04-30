@@ -40,7 +40,7 @@ export default function Chat() {
     setLoading(true);
 
     try {
-      const res = await sendMessage(storeId, question);
+      const res = await sendMessage(storeId, question, workerName);
       setMessages(prev => [...prev, {
         role: 'ai',
         content: res.data.answer,
