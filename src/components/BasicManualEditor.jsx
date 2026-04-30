@@ -174,6 +174,7 @@ export default function BasicManualEditor({ storeId, manuals, onUpdate }) {
                         첨부 파일
                       </div>
                       <div style={{ display:'flex', flexWrap:'wrap', gap:'.75rem' }}>
+                        
                         {m.manual_media?.map(media => (
   <div key={media.id} style={{
     position:'relative', borderRadius:'10px',
@@ -208,6 +209,20 @@ export default function BasicManualEditor({ storeId, manuals, onUpdate }) {
         )}
       </div>
     )}
+    {/* 삭제 버튼 */}
+    <button
+      onClick={() => handleMediaDelete(media.id)}
+      style={{
+        position:'absolute', top:'4px', right:'4px',
+        background:'rgba(0,0,0,.5)', color:'#fff',
+        border:'none', borderRadius:'50%',
+        width:'22px', height:'22px',
+        cursor:'pointer', fontSize:'.75rem',
+        display:'flex', alignItems:'center', justifyContent:'center'
+      }}
+    >×</button>
+  </div>   {/* ← 이 닫는 태그 추가 */}
+))}
                       </div>
                     </div>
                   )}
