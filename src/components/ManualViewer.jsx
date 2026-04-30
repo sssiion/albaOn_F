@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { updateManual, deleteManual, moveManual } from '../api/manuals';
-import { getCategories, addCategory, deleteCategory } from '../api/categories';
+import { getCategories, addCategory, deleteCategory,updateCategory } from '../api/categories';
 import { useEffect } from 'react';
 
 function parseToTree(content) {
@@ -92,9 +92,20 @@ export default function ManualViewer({ storeId, manuals, onUpdate }) {
   const [loading, setLoading]             = useState(false);
   const [showCatManager, setShowCatManager] = useState(false);
 
+  const [editingCatId, setEditingCatId]   = useState(null);
+  const [editingCatName, setEditingCatName] = useState('');
+
   useEffect(() => {
     loadCategories();
   }, [storeId]);
+
+  const handleUpdateCategory = async (catId) => {
+  if (!editingCatName.trim()) return;
+  await updateCategory(storeId, catId, editingCatName.trim());
+  setEditingCatId(null);
+  setEditingCatName('');
+  await loadCategories();
+};
 
   const loadCategories = async () => {
     const res = await getCategories(storeId);
@@ -233,22 +244,56 @@ export default function ManualViewer({ storeId, manuals, onUpdate }) {
           {/* 카테고리 목록 */}
           <div style={{ display:'flex', flexWrap:'wrap', gap:'.5rem', marginBottom:'1rem' }}>
             {categories.map(cat => (
-              <div key={cat.id} style={{
-                display:'flex', alignItems:'center', gap:'.4rem',
-                background:'#f0ede6', borderRadius:'100px',
-                padding:'.35rem .85rem', fontSize:'.85rem'
-              }}>
-                <span>{cat.name}</span>
-                <button
-                  onClick={() => handleDeleteCategory(cat.id)}
-                  style={{
-                    background:'none', border:'none', cursor:'pointer',
-                    color:'#a09b94', fontSize:'.9rem', padding:'0',
-                    lineHeight:1
-                  }}
-                >×</button>
-              </div>
-            ))}
+            <div key={cat.id}>
+              {editingCatId === cat.id ? (
+                <div style={{ display:'flex', alignItems:'center', gap:'.4rem' }}>
+                  <input
+                    value={editingCatName}
+                    onChange={e => setEditingCatName(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleUpdateCategory(cat.id)}
+                    autoFocus
+                    style={{
+                      padding:'.3rem .6rem', borderRadius:'6px',
+                      border:'1px solid #1a1a1a', fontSize:'.85rem',
+                      outline:'none', fontFamily:'inherit', width:'100px'
+                    }}
+                  />
+                  <button onClick={() => handleUpdateCategory(cat.id)} style={{
+                    background:'#1a1a1a', color:'#fff', border:'none',
+                    borderRadius:'6px', padding:'.3rem .6rem',
+                    fontSize:'.78rem', cursor:'pointer'
+                  }}>✓</button>
+                  <button onClick={() => setEditingCatId(null)} style={{
+                    background:'transparent', border:'1px solid #e2ddd5',
+                    borderRadius:'6px', padding:'.3rem .6rem',
+                    fontSize:'.78rem', cursor:'pointer', color:'#6b6560'
+                  }}>✕</button>
+                </div>
+              ) : (
+                <div style={{
+                  display:'flex', alignItems:'center', gap:'.4rem',
+                  background:'#f0ede6', borderRadius:'100px',
+                  padding:'.35rem .85rem', fontSize:'.85rem'
+                }}>
+                  <span>{cat.name}</span>
+                  <button
+                    onClick={() => { setEditingCatId(cat.id); setEditingCatName(cat.name); }}
+                    style={{
+                      background:'none', border:'none', cursor:'pointer',
+                      color:'#6b6560', fontSize:'.78rem', padding:'0'
+                    }}
+                  >✏️</button>
+                  <button
+                    onClick={() => handleDeleteCategory(cat.id)}
+                    style={{
+                      background:'none', border:'none', cursor:'pointer',
+                      color:'#a09b94', fontSize:'.9rem', padding:'0', lineHeight:1
+                    }}
+                  >×</button>
+                </div>
+              )}
+            </div>
+          ))}
             {categories.length === 0 && (
               <span style={{ fontSize:'.85rem', color:'#a09b94' }}>
                 아직 카테고리가 없어요
