@@ -284,8 +284,14 @@ export default function ManualViewer({ storeId, manuals, onUpdate }) {
   // 트리 노드 삭제
   const handleNodeDelete = async (manual, nodeId) => {
     const tree = parseToTree(manual.content);
+    console.log('삭제 전 트리:', tree);
+    console.log('삭제할 nodeId:', nodeId);
+    
     const newTree = removeNodeFromTree(tree, nodeId);
+    console.log('삭제 후 트리:', newTree);
+    
     const newContent = treeToText(newTree);
+     console.log('새 content:', newContent);
     setSaving(manual.id);
     try {
       await updateManual(manual.id, { content: newContent });
