@@ -221,7 +221,7 @@ export default function BasicManualEditor({ storeId, manuals, onUpdate }) {
         display:'flex', alignItems:'center', justifyContent:'center'
       }}
     >×</button>
-  </div>   {/* ← 이 닫는 태그 추가 */}
+  </div>  
 ))}
                       </div>
                     </div>
