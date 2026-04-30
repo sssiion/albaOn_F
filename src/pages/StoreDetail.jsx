@@ -242,11 +242,11 @@ export default function StoreDetail() {
                           {log.is_answered ? '✅ 답변됨' : '❌ 미답변'}
                         </span>
                         <span style={{ fontSize:'.75rem', color:'#a09b94' }}>
-                          {log.users?.name || '알바생'} · {new Date(log.created_at).toLocaleString('ko-KR', {
-                            month:'numeric', day:'numeric',
-                            hour:'numeric', minute:'numeric'
-                          })}
-                        </span>
+                        {log.worker_name || '알바생'} · {new Date(log.created_at).toLocaleString('ko-KR', {
+                          month:'numeric', day:'numeric',
+                          hour:'numeric', minute:'numeric'
+                        })}
+                      </span>
                       </div>
                     </div>
                     <div style={{
