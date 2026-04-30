@@ -10,6 +10,29 @@ export default function BasicManualEditor({ storeId, manuals, onUpdate }) {
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef();
 
+  const [videoUrl, setVideoUrl]   = useState('');
+  const [caption, setCaption]     = useState('');
+  const [showVideoForm, setShowVideoForm] = useState(false);
+
+  const handleVideoAdd = async (manualId) => {
+  if (!videoUrl.trim()) return;
+  setUploading(true);
+  try {
+    const formData = new FormData();
+    formData.append('type', 'video');
+    formData.append('url', videoUrl.trim());
+    formData.append('caption', caption);
+    await uploadMedia(manualId, formData);
+    setVideoUrl('');
+    setCaption('');
+    setShowVideoForm(false);
+    await onUpdate();
+  } catch (err) {
+    alert('추가 실패: ' + err.message);
+  }
+  setUploading(false);
+};
+
   const handleSave = async (e) => {
     e.preventDefault();
     if (!content.trim()) return;
@@ -195,11 +218,12 @@ export default function BasicManualEditor({ storeId, manuals, onUpdate }) {
                   )}
 
                   {/* 미디어 업로드 */}
-                  <div>
+                  <div style={{ display:'flex', flexDirection:'column', gap:'.5rem' }}>
+                    {/* 이미지 업로드 */}
                     <input
                       ref={fileRef}
                       type="file"
-                      accept="image/*,video/*"
+                      accept="image/*"
                       style={{ display:'none' }}
                       onChange={e => {
                         const file = e.target.files[0];
@@ -211,17 +235,66 @@ export default function BasicManualEditor({ storeId, manuals, onUpdate }) {
                       onClick={() => fileRef.current.click()}
                       disabled={uploading}
                       style={{
-                        background:'transparent',
-                        border:'1.5px dashed #e2ddd5',
+                        background:'transparent', border:'1.5px dashed #e2ddd5',
                         borderRadius:'10px', padding:'.65rem 1.25rem',
                         fontSize:'.85rem', cursor:'pointer',
-                        color:'#6b6560', fontFamily:'inherit',
-                        width:'100%', transition:'border-color .2s'
+                        color:'#6b6560', fontFamily:'inherit', width:'100%'
                       }}
                     >
-                      {uploading ? '업로드 중...' : '📎 이미지 / 영상 추가하기'}
+                      {uploading ? '업로드 중...' : '🖼️ 이미지 추가하기'}
                     </button>
+                  
+                    {/* 영상 URL 입력 */}
+                    {showVideoForm ? (
+                      <div style={{ display:'flex', flexDirection:'column', gap:'.5rem' }}>
+                        <input
+                          placeholder="영상 URL (유튜브, 네이버TV 등)"
+                          value={videoUrl}
+                          onChange={e => setVideoUrl(e.target.value)}
+                          style={{
+                            padding:'.65rem 1rem', borderRadius:'8px',
+                            border:'1px solid #e2ddd5', fontSize:'.88rem',
+                            outline:'none', fontFamily:'inherit'
+                          }}
+                        />
+                        <input
+                          placeholder="설명 (선택사항)"
+                          value={caption}
+                          onChange={e => setCaption(e.target.value)}
+                          style={{
+                            padding:'.65rem 1rem', borderRadius:'8px',
+                            border:'1px solid #e2ddd5', fontSize:'.88rem',
+                            outline:'none', fontFamily:'inherit'
+                          }}
+                        />
+                        <div style={{ display:'flex', gap:'.5rem' }}>
+                          <button onClick={() => handleVideoAdd(m.id)} disabled={uploading} style={{
+                            flex:1, background:'#1a1a1a', color:'#fff',
+                            fontWeight:700, padding:'.65rem', borderRadius:'8px',
+                            border:'none', cursor:'pointer', fontFamily:'inherit'
+                          }}>추가</button>
+                          <button onClick={() => { setShowVideoForm(false); setVideoUrl(''); setCaption(''); }} style={{
+                            padding:'.65rem 1rem', borderRadius:'8px',
+                            border:'1px solid #e2ddd5', background:'transparent',
+                            cursor:'pointer', fontFamily:'inherit'
+                          }}>취소</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setShowVideoForm(true)}
+                        style={{
+                          background:'transparent', border:'1.5px dashed #e2ddd5',
+                          borderRadius:'10px', padding:'.65rem 1.25rem',
+                          fontSize:'.85rem', cursor:'pointer',
+                          color:'#6b6560', fontFamily:'inherit', width:'100%'
+                        }}
+                      >
+                        🎬 영상 URL 추가하기
+                      </button>
+                    )}
                   </div>
+                 
                 </div>
               )}
             </div>
