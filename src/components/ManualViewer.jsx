@@ -383,7 +383,7 @@ export default function ManualViewer({ storeId, manuals, onUpdate }) {
                       borderRadius:'6px', padding:'.25rem .6rem',
                       fontSize:'.72rem', cursor:'pointer', color:'#6b6560'
                     }}>📂 이동</button>
-                    <button onClick={e => { e.stopPropagation(); setEditingId(m.id); setEditContent(m.original_content || m.content); setSelectedId(null); }} style={{
+                    <button onClick={e => { e.stopPropagation(); setEditingId(m.id); setEditContent(m.content); setSelectedId(null); }} style={{
                       background:'transparent', border:'1px solid #e2ddd5',
                       borderRadius:'6px', padding:'.25rem .6rem',
                       fontSize:'.72rem', cursor:'pointer', color:'#6b6560'
