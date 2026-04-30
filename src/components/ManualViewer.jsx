@@ -86,7 +86,7 @@ function TreeNode({ node, depth = 0, searchQuery, onNodeDelete, onNodeEdit }) {
 
   const handleEditSave = () => {
     if (editVal.trim()) {
-      onNodeEdit(node.id, editVal.trim());
+      onNodeEdit(node.label, editVal.trim());
     }
     setEditing(false);
   };
@@ -166,7 +166,7 @@ function TreeNode({ node, depth = 0, searchQuery, onNodeDelete, onNodeEdit }) {
               <button
                 onClick={() => {
                   if (confirm(`"${node.label}" 항목을 삭제할까요?`)) {
-                    onNodeDelete(node.id);
+                    onNodeDelete(node.label);
                   }
                 }}
                 style={{
@@ -282,40 +282,36 @@ export default function ManualViewer({ storeId, manuals, onUpdate }) {
   };
 
   // 트리 노드 삭제
-  const handleNodeDelete = async (manual, nodeId) => {
-    const tree = parseToTree(manual.content);
-    console.log('삭제 전 트리:', tree);
-    console.log('삭제할 nodeId:', nodeId);
-    
-    const newTree = removeNodeFromTree(tree, nodeId);
-    console.log('삭제 후 트리:', newTree);
-    
-    const newContent = treeToText(newTree);
-     console.log('새 content:', newContent);
-    setSaving(manual.id);
-    try {
-      await updateManual(manual.id, { content: newContent });
-      await onUpdate();
-    } catch (err) {
-      alert('삭제 실패: ' + err.message);
-    }
-    setSaving(null);
-  };
+  const handleNodeDelete = async (manual, nodeLabel) => {
+  const tree = parseToTree(manual.content);
+  const newTree = removeNodeFromTree(tree, nodeLabel);
+  const newContent = treeToText(newTree);
+
+  setSaving(manual.id);
+  try {
+    await updateManual(manual.id, { content: newContent });
+    await onUpdate();
+  } catch (err) {
+    alert('삭제 실패: ' + err.message);
+  }
+  setSaving(null);
+};
 
   // 트리 노드 수정
-  const handleNodeEdit = async (manual, nodeId, newLabel) => {
-    const tree = parseToTree(manual.content);
-    const newTree = updateNodeInTree(tree, nodeId, newLabel);
-    const newContent = treeToText(newTree);
-    setSaving(manual.id);
-    try {
-      await updateManual(manual.id, { content: newContent });
-      await onUpdate();
-    } catch (err) {
-      alert('수정 실패: ' + err.message);
-    }
-    setSaving(null);
-  };
+  const handleNodeEdit = async (manual, nodeLabel, newLabel) => {
+  const tree = parseToTree(manual.content);
+  const newTree = updateNodeInTree(tree, nodeLabel, newLabel);
+  const newContent = treeToText(newTree);
+
+  setSaving(manual.id);
+  try {
+    await updateManual(manual.id, { content: newContent });
+    await onUpdate();
+  } catch (err) {
+    alert('수정 실패: ' + err.message);
+  }
+  setSaving(null);
+};
 
   // 카테고리별 그룹핑
   const grouped = useMemo(() => {
@@ -599,8 +595,8 @@ export default function ManualViewer({ storeId, manuals, onUpdate }) {
                           node={node}
                           depth={0}
                           searchQuery={searchQuery}
-                          onNodeDelete={(nodeId) => handleNodeDelete(m, nodeId)}
-                          onNodeEdit={(nodeId, newLabel) => handleNodeEdit(m, nodeId, newLabel)}
+                          onNodeDelete={(nodeLabel) => handleNodeDelete(m, nodeLabel)}
+                          onNodeEdit={(nodeLabel, newLabel) => handleNodeEdit(m, nodeLabel, newLabel)}
                         />
                       ))
                     ) : (
