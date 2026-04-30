@@ -3,12 +3,13 @@ import { useParams,useSearchParams } from 'react-router-dom';
 import { sendMessage } from '../api/chat';
 import api from '../api';
 // Chat.jsx 상단에 추가
-const [params] = useSearchParams();
-const workerName = params.get('name') || localStorage.getItem('worker_name') || '알바생';
+
 
 
 export default function Chat() {
   const { storeId } = useParams();
+  const [params] = useSearchParams();
+  const workerName = params.get('name') || localStorage.getItem('worker_name') || '알바생';
   const [messages, setMessages] = useState([
     {
       role: 'ai',
