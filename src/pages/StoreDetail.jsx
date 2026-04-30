@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getStore } from '../api/stores';
-import { getManuals, createManual, deleteManual } from '../api/manuals';
 import { getChatLogs } from '../api/chat';
 import AudioUpload from '../components/AudioUpload';
 import { getManuals, createManual, deleteManual, updateManual } from '../api/manuals';
