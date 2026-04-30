@@ -13,7 +13,6 @@ export default function StoreDetail() {
   const [manuals, setManuals] = useState([]);
   const [logs, setLogs]       = useState([]);
   const [tab, setTab]         = useState('manual'); // manual | logs
-  const [form, setForm]       = useState({ title: '', content: '' });
   const [loading, setLoading] = useState(false);
   const [saved, setSaved]     = useState(false);
   const [form, setForm] = useState({ content: '', editingId: null });
