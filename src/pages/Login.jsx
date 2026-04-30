@@ -21,24 +21,37 @@ export default function Login() {
   }, []);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!name.trim() || pin.length !== 4) return;
-    setError('');
-    setLoading(true);
+  e.preventDefault();
+  if (!name.trim() || pin.length !== 4) return;
+  setError('');
+  setLoading(true);
 
+  // 서버 깨우기 (최대 30초 대기)
+  setError('서버 시작 중... 잠시만 기다려주세요 ⏳');
+  for (let i = 0; i < 10; i++) {
     try {
-      const res = mode === 'login'
-        ? await login(name.trim(), pin)
-        : await register(name.trim(), pin);
-
-      saveToken(res.data.token);
-      navigate('/dashboard');
-
-    } catch (err) {
-      setError(err.response?.data?.error || '오류가 생겼어요. 다시 시도해주세요.');
+      await api.get('/health');
+      break; // 서버 응답하면 루프 탈출
+    } catch {
+      await new Promise(r => setTimeout(r, 3000)); // 3초 대기 후 재시도
     }
-    setLoading(false);
-  };
+  }
+  setError('');
+
+  // 로그인 시도
+  try {
+    const res = mode === 'login'
+      ? await login(name.trim(), pin)
+      : await register(name.trim(), pin);
+
+    saveToken(res.data.token);
+    navigate('/dashboard');
+
+  } catch (err) {
+    setError(err.response?.data?.error || '오류가 생겼어요. 다시 시도해주세요.');
+  }
+  setLoading(false);
+};
 
   return (
     <div style={{
