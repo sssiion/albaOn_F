@@ -176,18 +176,47 @@ export default function ManualViewer({ storeId, manuals, onUpdate }) {
     await onUpdate();
   };
 
-  const handleSave = async (manualId) => {
-    if (!editContent.trim()) return;
-    setLoading(true);
-    try {
-      await updateManual(manualId, { content: editContent });
-      setEditingId(null);
-      await onUpdate();
-    } catch (err) {
-      alert('수정 실패: ' + err.message);
-    }
-    setLoading(false);
+  // handleSave 수정 - AI 없이 그냥 저장
+const handleSave = async (manualId) => {
+  if (!editContent.trim()) return;
+  setLoading(true);
+  try {
+    await updateManual(manualId, { content: editContent });
+    setEditingId(null);
+    await onUpdate();
+  } catch (err) {
+    alert('수정 실패: ' + err.message);
+  }
+  setLoading(false);
+};
+
+// 트리에서 행 삭제
+const handleTreeDelete = (manualId, content) => (action, nodeId) => {
+  if (action !== 'delete') return;
+
+  // content에서 해당 nodeId를 가진 줄 찾아서 삭제
+  const tree = parseToTree(content);
+  const removeNode = (nodes) => nodes.filter(n => {
+    if (n.id === nodeId) return false;
+    n.children = removeNode(n.children);
+    return true;
+  });
+
+  const newTree = removeNode(tree);
+
+  // 트리를 다시 텍스트로 변환
+  const treeToText = (nodes, depth = 0) => {
+    return nodes.map(n => {
+      const prefix = depth === 0 ? '## ' : depth === 1 ? '### ' : '- ';
+      const line = prefix + n.label;
+      const children = n.children.length > 0 ? '\n' + treeToText(n.children, depth + 1) : '';
+      return line + children;
+    }).join('\n');
   };
+
+  const newContent = treeToText(newTree);
+  updateManual(manualId, { content: newContent }).then(() => onUpdate());
+};
 
   const handleDelete = async (manualId) => {
     if (!confirm('삭제할까요?')) return;
@@ -516,19 +545,25 @@ export default function ManualViewer({ storeId, manuals, onUpdate }) {
                 )}
 
                 {/* 트리 뷰 */}
-                {selectedId === m.id && editingId !== m.id && (
-                  <div style={{ padding:'1rem 1.25rem', borderTop:'1px solid #f0ede6' }}>
-                    {parseToTree(m.content).length > 0 ? (
-                      parseToTree(m.content).map(node => (
-                        <TreeNode key={node.id} node={node} depth={0} searchQuery={searchQuery} />
-                      ))
-                    ) : (
-                      <div style={{ whiteSpace:'pre-wrap', fontSize:'.88rem', color:'#3d3d3a', lineHeight:1.8 }}>
-                        {m.content}
-                      </div>
-                    )}
-                  </div>
-                )}
+               {selectedId === m.id && editingId !== m.id && (
+                <div style={{ padding:'1rem 1.25rem', borderTop:'1px solid #f0ede6' }}>
+                  {parseToTree(m.content).length > 0 ? (
+                    parseToTree(m.content).map(node => (
+                      <TreeNode
+                        key={node.id}
+                        node={node}
+                        depth={0}
+                        searchQuery={searchQuery}
+                        onDelete={handleTreeDelete(m.id, m.content)}  // 추가
+                      />
+                    ))
+                  ) : (
+                    <div style={{ whiteSpace:'pre-wrap', fontSize:'.88rem', color:'#3d3d3a', lineHeight:1.8 }}>
+                      {m.content}
+                    </div>
+                  )}
+                </div>
+              )}
               </div>
             ))}
           </div>
