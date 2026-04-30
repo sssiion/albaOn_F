@@ -5,6 +5,9 @@ import AuthCallback from './pages/AuthCallback';
 import Dashboard    from './pages/Dashboard';
 import StoreDetail  from './pages/StoreDetail';  // 추가
 
+import Join from './pages/Join';
+import Chat from './pages/Chat';
+
 function PrivateRoute({ children }) {
   return getToken() ? children : <Navigate to="/login" replace />;
 }
@@ -18,6 +21,8 @@ export default function App() {
         <Route path="/auth/error"     element={<div>로그인 실패</div>} />
         <Route path="/dashboard"      element={<PrivateRoute><Dashboard /></PrivateRoute>} />
         <Route path="/store/:storeId" element={<PrivateRoute><StoreDetail /></PrivateRoute>} />
+        <Route path="/join/:inviteCode" element={<Join />} />
+        <Route path="/chat/:storeId"   element={<PrivateRoute><Chat /></PrivateRoute>} />  
         <Route path="*"               element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
