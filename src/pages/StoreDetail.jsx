@@ -17,10 +17,19 @@ export default function StoreDetail() {
   const [saved, setSaved]     = useState(false);
   const [form, setForm] = useState({ content: '', editingId: null });
 
+  const [basicManuals, setBasicManuals] = useState([]);
+  const [basicForm, setBasicForm]       = useState({ content: '', editingId: null });
+  
+  const loadBasicManuals = async () => {
+    const res = await getBasicManuals(storeId);
+    setBasicManuals(res.data);
+  };
+
   useEffect(() => {
     getStore(storeId).then(r => setStore(r.data));
     loadManuals();
     loadLogs();
+    loadBasicManuals(); 
   }, [storeId]);
   
   const handleReanswer = async (logId) => {
@@ -117,6 +126,7 @@ export default function StoreDetail() {
         {[
           { key:'manual', label:'📝 매뉴얼 관리' },
           { key:'view',   label:'📖 매뉴얼 보기' },  
+          { key:'basic', label:'📗 기초 매뉴얼' },
           { key:'logs',   label:`💬 질문 로그 ${unansweredLogs.length > 0 ? `(미답변 ${unansweredLogs.length})` : ''}` }
       
       
