@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getStore } from '../api/stores';
-import { getChatLogs } from '../api/chat';
+import { getChatLogs, reanswer } from '../api/chat';
 import AudioUpload from '../components/AudioUpload';
 import { getManuals, createManual, deleteManual, updateManual } from '../api/manuals';
 import ManualViewer from '../components/ManualViewer';
@@ -22,7 +22,18 @@ export default function StoreDetail() {
     loadManuals();
     loadLogs();
   }, [storeId]);
+  
+  const handleReanswer = async (logId) => {
+  try {
+    await reanswer(storeId, logId);
+    await loadLogs();
+    alert('✅ 재답변 완료!');
+  } catch (err) {
+    alert('재답변 실패: ' + err.message);
+  }
+};
 
+  
   const loadManuals = async () => {
     const res = await getManuals(storeId);
     setManuals(res.data);
@@ -276,18 +287,31 @@ export default function StoreDetail() {
 
                     {/* 미답변이면 매뉴얼 추가 유도 */}
                     {!log.is_answered && (
+                    <div style={{ display:'flex', gap:'.5rem', marginTop:'.75rem', flexWrap:'wrap' }}>
                       <button
                         onClick={() => setTab('manual')}
                         style={{
-                          marginTop:'.75rem', background:'transparent',
-                          border:'1px solid #e2ddd5', borderRadius:'8px',
-                          padding:'.45rem .9rem', fontSize:'.78rem',
-                          cursor:'pointer', color:'#6b6560', fontFamily:'inherit'
+                          background:'transparent', border:'1px solid #e2ddd5',
+                          borderRadius:'8px', padding:'.45rem .9rem',
+                          fontSize:'.78rem', cursor:'pointer',
+                          color:'#6b6560', fontFamily:'inherit'
                         }}
                       >
-                        + 이 내용 매뉴얼에 추가하기
+                        + 매뉴얼에 추가하기
                       </button>
-                    )}
+                      <button
+                        onClick={() => handleReanswer(log.id)}
+                        style={{
+                          background:'#1a1a1a', color:'#fff',
+                          border:'none', borderRadius:'8px',
+                          padding:'.45rem .9rem', fontSize:'.78rem',
+                          cursor:'pointer', fontFamily:'inherit'
+                        }}
+                      >
+                        🔄 매뉴얼로 재답변
+                      </button>
+                    </div>
+                  )}
                   </div>
                 ))}
               </div>
