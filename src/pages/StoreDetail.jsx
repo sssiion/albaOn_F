@@ -3,8 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getStore } from '../api/stores';
 import { getChatLogs, reanswer } from '../api/chat';
 import AudioUpload from '../components/AudioUpload';
-import { getManuals, createManual, deleteManual, updateManual } from '../api/manuals';
 import ManualViewer from '../components/ManualViewer';
+import { getManuals, createManual, deleteManual, updateManual, getBasicManuals, createBasicManual } from '../api/manuals';
+import BasicManualEditor from '../components/BasicManualEditor';
 
 export default function StoreDetail() {
   const { storeId } = useParams();
@@ -253,6 +254,13 @@ export default function StoreDetail() {
             )}
           </>
         )}
+        {tab === 'basic' && (
+        <BasicManualEditor
+          storeId={storeId}
+          manuals={basicManuals}
+          onUpdate={loadBasicManuals}
+        />
+      )}
         {/* 매뉴얼 보기 탭 */}
         {tab === 'view' && (
           <ManualViewer
