@@ -1,15 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login, register } from '../api/auth';
 import { saveToken } from '../lib/auth';
+import api from '../api';
 
 export default function Login() {
-  const [mode, setMode]     = useState('login'); // login | register
-  const [name, setName]     = useState('');
-  const [pin, setPin]       = useState('');
-  const [error, setError]   = useState('');
+  const [mode, setMode]       = useState('login');
+  const [name, setName]       = useState('');
+  const [pin, setPin]         = useState('');
+  const [error, setError]     = useState('');
   const [loading, setLoading] = useState(false);
+  const [warming, setWarming] = useState(true); // 서버 깨우는 중
   const navigate = useNavigate();
+
+  // 컴포넌트 로드되자마자 서버 깨우기
+  useEffect(() => {
+    api.get('/health')
+      .then(() => setWarming(false))
+      .catch(() => setWarming(false)); // 실패해도 그냥 진행
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -46,6 +55,18 @@ export default function Login() {
       <p style={{ color:'#6b6560', marginBottom:'2rem', fontSize:'.9rem' }}>
         새벽 전화 없애는 알바 온보딩 AI
       </p>
+
+      {/* 서버 워밍업 표시 */}
+      {warming && (
+        <div style={{
+          background:'#fffbe8', border:'1px solid #ffe5a0',
+          borderRadius:'10px', padding:'.75rem 1.25rem',
+          fontSize:'.82rem', color:'#a07000',
+          marginBottom:'1rem', textAlign:'center'
+        }}>
+          ⏳ 서버 준비 중... 잠시만 기다려주세요
+        </div>
+      )}
 
       {/* 탭 */}
       <div style={{
@@ -113,15 +134,19 @@ export default function Login() {
           </div>
         )}
 
-        <button type="submit" disabled={loading || !name.trim() || pin.length !== 4} style={{
-          background: (name.trim() && pin.length === 4) ? '#1a1a1a' : '#e2ddd5',
-          color: (name.trim() && pin.length === 4) ? '#fff' : '#a09b94',
-          fontWeight:700, fontSize:'1rem',
-          padding:'.9rem', borderRadius:'10px',
-          border:'none', cursor:'pointer',
-          fontFamily:'inherit', transition:'all .2s'
-        }}>
-          {loading ? '처리 중...' : mode === 'login' ? '로그인' : '회원가입'}
+        <button
+          type="submit"
+          disabled={loading || warming || !name.trim() || pin.length !== 4}
+          style={{
+            background: (!warming && name.trim() && pin.length === 4) ? '#1a1a1a' : '#e2ddd5',
+            color: (!warming && name.trim() && pin.length === 4) ? '#fff' : '#a09b94',
+            fontWeight:700, fontSize:'1rem',
+            padding:'.9rem', borderRadius:'10px',
+            border:'none', cursor:'pointer',
+            fontFamily:'inherit', transition:'all .2s'
+          }}
+        >
+          {warming ? '서버 준비 중...' : loading ? '처리 중...' : mode === 'login' ? '로그인' : '회원가입'}
         </button>
       </form>
     </div>
