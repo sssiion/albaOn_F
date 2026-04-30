@@ -16,6 +16,7 @@ export default function StoreDetail() {
   const [form, setForm]       = useState({ title: '', content: '' });
   const [loading, setLoading] = useState(false);
   const [saved, setSaved]     = useState(false);
+  const [form, setForm] = useState({ content: '', editingId: null });
 
   useEffect(() => {
     getStore(storeId).then(r => setStore(r.data));
@@ -45,16 +46,27 @@ export default function StoreDetail() {
   };
 
   const handleSave = async (e) => {
-    e.preventDefault();
-    if (!form.content.trim()) return;
-    setLoading(true);
-    await createManual(storeId, form);
-    setForm({ title: '', content: '' });
+  e.preventDefault();
+  if (!form.content.trim()) return;
+  setLoading(true);
+
+  try {
+    if (form.editingId) {
+      // 수정 모드 — 기존 매뉴얼 업데이트
+      await updateManual(form.editingId, { content: form.content });
+    } else {
+      // 새 매뉴얼 추가
+      await createManual(storeId, { content: form.content });
+    }
+    setForm({ content: '', editingId: null });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
     await loadManuals();
-    setLoading(false);
-  };
+  } catch (err) {
+    alert('저장 실패: ' + err.message);
+  }
+  setLoading(false);
+};
 
   const handleDelete = async (manualId) => {
     if (!confirm('삭제할까요?')) return;
@@ -69,6 +81,7 @@ export default function StoreDetail() {
   };
 
   const unansweredLogs = logs.filter(l => !l.is_answered);
+  
 
   if (!store) return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100vh' }}>
@@ -179,35 +192,54 @@ export default function StoreDetail() {
             ) : (
               <div style={{ display:'flex', flexDirection:'column', gap:'.6rem' }}>
                 {manuals.map(m => (
-                  <div key={m.id} style={{
-                    background:'#fff', border:'1px solid #e2ddd5',
-                    borderRadius:'12px', padding:'1rem 1.25rem',
+                <div key={m.id} style={{
+                  background:'#fff', border:'1px solid #e2ddd5',
+                  borderRadius:'12px', padding:'1rem 1.25rem',
+                  display:'flex', flexDirection:'column', gap:'.75rem'
+                }}>
+                  {/* 제목 + 버튼 */}
+                  <div style={{
                     display:'flex', justifyContent:'space-between',
-                    alignItems:'flex-start', gap:'1rem'
+                    alignItems:'center'
                   }}>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      {m.title && (
-                        <div style={{ fontWeight:700, fontSize:'.85rem', marginBottom:'.3rem' }}>
-                          {m.title}
-                        </div>
-                      )}
-                      <div style={{
-                        fontSize:'.82rem', color:'#6b6560',
-                        overflow:'hidden', textOverflow:'ellipsis',
-                        display:'-webkit-box', WebkitLineClamp:2,
-                        WebkitBoxOrient:'vertical'
-                      }}>
-                        {m.content}
-                      </div>
+                    <div style={{ fontWeight:700, fontSize:'.88rem' }}>
+                      {m.title}
                     </div>
-                    <button onClick={() => handleDelete(m.id)} style={{
-                      background:'transparent', border:'1px solid #e2ddd5',
-                      borderRadius:'6px', padding:'.3rem .7rem',
-                      fontSize:'.75rem', cursor:'pointer', color:'#a09b94',
-                      flexShrink:0
-                    }}>삭제</button>
+                    <div style={{ display:'flex', gap:'.5rem' }}>
+                      <button
+                        onClick={() => {
+                          setForm(f => ({
+                            ...f,
+                            content: m.original_content || m.content,
+                            editingId: m.id  // 수정 모드 표시
+                          }));
+                          window.scrollTo(0, 0);
+                        }}
+                        style={{
+                          background:'transparent', border:'1px solid #e2ddd5',
+                          borderRadius:'6px', padding:'.3rem .7rem',
+                          fontSize:'.75rem', cursor:'pointer', color:'#6b6560'
+                        }}
+                      >✏️ 수정</button>
+                      <button onClick={() => handleDelete(m.id)} style={{
+                        background:'transparent', border:'1px solid #ffc9c9',
+                        borderRadius:'6px', padding:'.3rem .7rem',
+                        fontSize:'.75rem', cursor:'pointer', color:'#ff3b3b'
+                      }}>삭제</button>
+                    </div>
                   </div>
-                ))}
+              
+                  {/* 원본 텍스트 */}
+                  <div style={{
+                    fontSize:'.85rem', color:'#3d3d3a',
+                    lineHeight:1.75, whiteSpace:'pre-wrap',
+                    background:'#f7f6f2', padding:'.85rem 1rem',
+                    borderRadius:'8px'
+                  }}>
+                    {m.original_content || m.content}
+                  </div>
+                </div>
+              ))}
               </div>
             )}
           </>
