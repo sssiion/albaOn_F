@@ -174,45 +174,40 @@ export default function BasicManualEditor({ storeId, manuals, onUpdate }) {
                         첨부 파일
                       </div>
                       <div style={{ display:'flex', flexWrap:'wrap', gap:'.75rem' }}>
-                        {m.manual_media.map(media => (
-                          <div key={media.id} style={{
-                            position:'relative', borderRadius:'10px',
-                            overflow:'hidden', border:'1px solid #e2ddd5'
-                          }}>
-                            {media.type === 'image' ? (
-                              <img
-                                src={media.url}
-                                alt={media.caption || '이미지'}
-                                style={{ width:'140px', height:'100px', objectFit:'cover', display:'block' }}
-                              />
-                            ) : (
-                              <video
-                                src={media.url}
-                                controls
-                                style={{ width:'200px', height:'120px', display:'block' }}
-                              />
-                            )}
-                            {media.caption && (
-                              <div style={{
-                                padding:'.3rem .5rem', fontSize:'.75rem',
-                                color:'#6b6560', background:'#f7f6f2'
-                              }}>
-                                {media.caption}
-                              </div>
-                            )}
-                            <button
-                              onClick={() => handleMediaDelete(media.id)}
-                              style={{
-                                position:'absolute', top:'4px', right:'4px',
-                                background:'rgba(0,0,0,.5)', color:'#fff',
-                                border:'none', borderRadius:'50%',
-                                width:'22px', height:'22px',
-                                cursor:'pointer', fontSize:'.75rem',
-                                display:'flex', alignItems:'center', justifyContent:'center'
-                              }}
-                            >×</button>
-                          </div>
-                        ))}
+                        {m.manual_media?.map(media => (
+  <div key={media.id} style={{
+    position:'relative', borderRadius:'10px',
+    overflow:'hidden', border:'1px solid #e2ddd5',
+    width: media.type === 'video' ? '100%' : 'auto'
+  }}>
+    {media.type === 'image' ? (
+      <img
+        src={media.url}
+        alt={media.caption || '이미지'}
+        style={{ width:'140px', height:'100px', objectFit:'cover', display:'block' }}
+      />
+    ) : (
+      <div style={{ width:'100%' }}>
+        {media.url.includes('youtube') || media.url.includes('youtu.be') ? (
+          <iframe
+            src={media.url.replace('watch?v=', 'embed/')}
+            style={{ width:'100%', height:'200px', border:'none', borderRadius:'8px' }}
+            allowFullScreen
+          />
+        ) : (
+          <video
+            src={media.url}
+            controls
+            style={{ width:'100%', height:'200px', borderRadius:'8px' }}
+          />
+        )}
+        {media.caption && (
+          <div style={{ fontSize:'.78rem', color:'#6b6560', marginTop:'.3rem', padding:'.3rem .5rem' }}>
+            {media.caption}
+          </div>
+        )}
+      </div>
+    )}
                       </div>
                     </div>
                   )}
