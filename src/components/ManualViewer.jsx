@@ -136,7 +136,7 @@ export default function ManualViewer({ storeId, manuals, onUpdate }) {
     if (!editContent.trim()) return;
     setLoading(true);
     try {
-      await updateManual(storeId, manualId, { content: editContent });
+      await updateManual(manualId, { content: editContent });
       setEditingId(null);
       await onUpdate();
     } catch (err) {
