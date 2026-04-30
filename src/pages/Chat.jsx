@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams,useSearchParams } from 'react-router-dom';
 import { sendMessage } from '../api/chat';
 import api from '../api';
+// Chat.jsx 상단에 추가
+const [params] = useSearchParams();
+const workerName = params.get('name') || localStorage.getItem('worker_name') || '알바생';
+
 
 export default function Chat() {
   const { storeId } = useParams();
