@@ -42,17 +42,17 @@ function parseToTree(content) {
 }
 
 // 트리에서 특정 노드 삭제
-function removeNodeFromTree(nodes, targetId) {
+function removeNodeFromTree(nodes, targetLabel) {
   return nodes
-    .filter(n => n.id !== targetId)
-    .map(n => ({ ...n, children: removeNodeFromTree(n.children || [], targetId) }));
+    .filter(n => n.label !== targetLabel)
+    .map(n => ({ ...n, children: removeNodeFromTree(n.children || [], targetLabel) }));
 }
 
-// 트리에서 특정 노드 라벨 수정
-function updateNodeInTree(nodes, targetId, newLabel) {
+// 트리에서 특정 노드 수정 (label 기준)
+function updateNodeInTree(nodes, targetLabel, newLabel) {
   return nodes.map(n => {
-    if (n.id === targetId) return { ...n, label: newLabel };
-    return { ...n, children: updateNodeInTree(n.children || [], targetId, newLabel) };
+    if (n.label === targetLabel) return { ...n, label: newLabel };
+    return { ...n, children: updateNodeInTree(n.children || [], targetLabel, newLabel) };
   });
 }
 
