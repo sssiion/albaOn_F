@@ -9,7 +9,8 @@ export const updateManual = (manualId, data) =>
   api.put(`/api/manuals/edit/${manualId}`, data);
 export const deleteManual = (storeId, manualId)    => api.delete(`/api/manuals/${storeId}/${manualId}`);
 export const moveManual   = (storeId, manualId, categoryId) => api.patch(`/api/manuals/${storeId}/${manualId}/category`, { categoryId });
-
+export const getBasicManuals  = (storeId)       => api.get(`/api/manuals/${storeId}/basic`);
+export const createBasicManual = (storeId, data) => api.post(`/api/manuals/${storeId}/basic`, data);
 
 export const uploadAudio = (storeId, formData) =>
   api.post(`/api/manuals/${storeId}/upload`, formData, {
