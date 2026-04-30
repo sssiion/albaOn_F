@@ -22,7 +22,7 @@ export default function App() {
         <Route path="/dashboard"      element={<PrivateRoute><Dashboard /></PrivateRoute>} />
         <Route path="/store/:storeId" element={<PrivateRoute><StoreDetail /></PrivateRoute>} />
         <Route path="/join/:inviteCode" element={<Join />} />
-        <Route path="/chat/:storeId"   element={<PrivateRoute><Chat /></PrivateRoute>} />  
+        <Route path="/chat/:storeId"   element={<Chat />} />
         <Route path="*"               element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
