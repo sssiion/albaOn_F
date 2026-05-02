@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { updateManual, deleteManual, moveManual } from '../api/manuals';
 import { getCategories, addCategory, deleteCategory, updateCategory } from '../api/categories';
+import { uploadNodeMedia, deleteNodeMedia } from '../api/media';
 
 // 트리 → 텍스트 변환
 function treeToText(nodes, depth = 0) {
@@ -57,26 +58,50 @@ function updateNodeInTree(nodes, targetLabel, newLabel) {
 }
 
 // 트리 노드 컴포넌트
-function TreeNode({ node, depth = 0, searchQuery, onNodeDelete, onNodeEdit }) {
-  const [open, setOpen]       = useState(depth < 2);
-  const [editing, setEditing] = useState(false);
-  const [editVal, setEditVal] = useState(node.label);
+function TreeNode({ node, depth = 0, searchQuery, onNodeDelete, onNodeEdit, manualId, storeId, nodeMedia, onMediaUpdate }) {
+  const [open, setOpen]         = useState(depth < 2);
+  const [editing, setEditing]   = useState(false);
+  const [editVal, setEditVal]   = useState(node.label);
+  const [showUpload, setShowUpload] = useState(false);
+  const [caption, setCaption]   = useState('');
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef();
   const hasChildren = node.children?.length > 0;
   const isMatch = searchQuery && node.label.toLowerCase().includes(searchQuery.toLowerCase());
+
+  // 이 노드에 연결된 이미지들
+  const myMedia = nodeMedia?.filter(m => m.node_label === node.label) || [];
+
+  const handleImageUpload = async (file) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('nodeLabel', node.label);
+      formData.append('storeId', storeId);
+      formData.append('caption', caption);
+      await uploadNodeMedia(manualId, formData);
+      setCaption('');
+      setShowUpload(false);
+      await onMediaUpdate();
+    } catch (err) {
+      alert('업로드 실패: ' + err.message);
+    }
+    setUploading(false);
+  };
+
+  const handleDeleteMedia = async (mediaId) => {
+    if (!confirm('이미지를 삭제할까요?')) return;
+    await deleteNodeMedia(mediaId);
+    await onMediaUpdate();
+  };
 
   const highlight = (text) => {
     if (!searchQuery) return text;
     const idx = text.toLowerCase().indexOf(searchQuery.toLowerCase());
     if (idx === -1) return text;
-    return (
-      <>
-        {text.slice(0, idx)}
-        <mark style={{ background:'#ffe5a0', borderRadius:'3px', padding:'0 2px' }}>
-          {text.slice(idx, idx + searchQuery.length)}
-        </mark>
-        {text.slice(idx + searchQuery.length)}
-      </>
-    );
+    return (<>{text.slice(0, idx)}<mark style={{ background:'#ffe5a0', borderRadius:'3px', padding:'0 2px' }}>{text.slice(idx, idx + searchQuery.length)}</mark>{text.slice(idx + searchQuery.length)}</>);
   };
 
   const colors  = ['#1a1a1a', '#3d6b8a', '#6b8a3d', '#8a6b3d'];
@@ -85,14 +110,13 @@ function TreeNode({ node, depth = 0, searchQuery, onNodeDelete, onNodeEdit }) {
   const d = Math.min(depth, 3);
 
   const handleEditSave = () => {
-    if (editVal.trim()) {
-      onNodeEdit(node.label, editVal.trim());
-    }
+    if (editVal.trim()) onNodeEdit(node.label, editVal.trim());
     setEditing(false);
   };
 
   return (
     <div style={{ marginLeft: depth > 0 ? '1rem' : '0' }}>
+      {/* 노드 행 */}
       <div style={{
         display:'flex', alignItems:'center', gap:'.4rem',
         padding:'.35rem .6rem', borderRadius:'8px',
@@ -103,99 +127,102 @@ function TreeNode({ node, depth = 0, searchQuery, onNodeDelete, onNodeEdit }) {
         onMouseEnter={e => { if (!isMatch) e.currentTarget.style.background = '#f7f6f2'; }}
         onMouseLeave={e => { if (!isMatch) e.currentTarget.style.background = 'transparent'; }}
       >
-        {/* 펼치기 */}
-        <span
-          onClick={() => hasChildren && setOpen(!open)}
-          style={{ fontSize:'.7rem', color:'#a09b94', width:'12px', flexShrink:0, cursor: hasChildren ? 'pointer' : 'default' }}
-        >
+        <span onClick={() => hasChildren && setOpen(!open)}
+          style={{ fontSize:'.7rem', color:'#a09b94', width:'12px', flexShrink:0, cursor: hasChildren ? 'pointer' : 'default' }}>
           {hasChildren ? (open ? '▼' : '▶') : '•'}
         </span>
 
-        {/* 라벨 or 편집 */}
         {editing ? (
           <input
             value={editVal}
             onChange={e => setEditVal(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleEditSave(); if (e.key === 'Escape') { setEditing(false); setEditVal(node.label); } }}
             autoFocus
-            style={{
-              flex:1, padding:'.25rem .5rem', borderRadius:'6px',
-              border:'1px solid #1a1a1a', fontSize: sizes[d],
-              outline:'none', fontFamily:'inherit'
-            }}
+            style={{ flex:1, padding:'.2rem .5rem', borderRadius:'6px', border:'1px solid #1a1a1a', fontSize: sizes[d], outline:'none', fontFamily:'inherit' }}
           />
         ) : (
-          <span
-            onClick={() => hasChildren && setOpen(!open)}
-            style={{
-              flex:1, fontSize: sizes[d], fontWeight: weights[d],
-              color: colors[d], lineHeight:1.5,
-              cursor: hasChildren ? 'pointer' : 'default'
-            }}
-          >
+          <span onClick={() => hasChildren && setOpen(!open)}
+            style={{ flex:1, fontSize: sizes[d], fontWeight: weights[d], color: colors[d], lineHeight:1.5, cursor: hasChildren ? 'pointer' : 'default' }}>
             {highlight(node.label)}
           </span>
         )}
 
-        {/* 수정/삭제 버튼 */}
+        {/* 버튼들 */}
         <div style={{ display:'flex', gap:'.2rem', flexShrink:0 }}>
           {editing ? (
             <>
-              <button onClick={handleEditSave} style={{
-                background:'#1a1a1a', color:'#fff', border:'none',
-                borderRadius:'4px', padding:'2px 7px',
-                fontSize:'.7rem', cursor:'pointer'
-              }}>✓</button>
-              <button onClick={() => { setEditing(false); setEditVal(node.label); }} style={{
-                background:'transparent', border:'1px solid #e2ddd5',
-                borderRadius:'4px', padding:'2px 7px',
-                fontSize:'.7rem', cursor:'pointer', color:'#6b6560'
-              }}>✕</button>
+              <button onClick={handleEditSave} style={{ background:'#1a1a1a', color:'#fff', border:'none', borderRadius:'4px', padding:'2px 7px', fontSize:'.7rem', cursor:'pointer' }}>✓</button>
+              <button onClick={() => { setEditing(false); setEditVal(node.label); }} style={{ background:'transparent', border:'1px solid #e2ddd5', borderRadius:'4px', padding:'2px 7px', fontSize:'.7rem', cursor:'pointer', color:'#6b6560' }}>✕</button>
             </>
           ) : (
             <>
+              {/* 이미지 첨부 버튼 */}
               <button
-                onClick={() => setEditing(true)}
-                style={{
-                  background:'transparent', border:'none',
-                  cursor:'pointer', color:'#a09b94',
-                  fontSize:'.75rem', padding:'0 3px', opacity:0.7
-                }}
-                title="수정"
-              >✏️</button>
-              <button
-                onClick={() => {
-                  if (confirm(`"${node.label}" 항목을 삭제할까요?`)) {
-                    onNodeDelete(node.label);
-                  }
-                }}
-                style={{
-                  background:'transparent', border:'none',
-                  cursor:'pointer', color:'#a09b94',
-                  fontSize:'.8rem', padding:'0 3px', opacity:0.7
-                }}
-                title="삭제"
-              >×</button>
+                onClick={() => setShowUpload(!showUpload)}
+                style={{ background:'transparent', border:'none', cursor:'pointer', color: myMedia.length > 0 ? '#3d6b8a' : '#ccc', fontSize:'.8rem', padding:'0 2px' }}
+                title="이미지 첨부"
+              >🖼️</button>
+              <button onClick={() => setEditing(true)} style={{ background:'transparent', border:'none', cursor:'pointer', color:'#a09b94', fontSize:'.75rem', padding:'0 3px', opacity:0.7 }} title="수정">✏️</button>
+              <button onClick={() => { if (confirm(`"${node.label}" 항목을 삭제할까요?`)) onNodeDelete(node.label); }} style={{ background:'transparent', border:'none', cursor:'pointer', color:'#a09b94', fontSize:'.8rem', padding:'0 3px', opacity:0.7 }} title="삭제">×</button>
             </>
           )}
         </div>
 
         {hasChildren && (
-          <span style={{
-            fontSize:'.65rem', color:'#a09b94', background:'#f0ede6',
-            padding:'1px 5px', borderRadius:'10px', flexShrink:0
-          }}>
+          <span style={{ fontSize:'.65rem', color:'#a09b94', background:'#f0ede6', padding:'1px 5px', borderRadius:'10px', flexShrink:0 }}>
             {node.children.length}
           </span>
         )}
       </div>
 
+      {/* 이미지 업로드 패널 */}
+      {showUpload && (
+        <div style={{ marginLeft:'1.5rem', marginBottom:'.5rem', padding:'.75rem', background:'#f7f6f2', borderRadius:'8px' }}>
+          <input
+            placeholder="설명 (선택사항)"
+            value={caption}
+            onChange={e => setCaption(e.target.value)}
+            style={{ width:'100%', padding:'.4rem .6rem', borderRadius:'6px', border:'1px solid #e2ddd5', fontSize:'.8rem', outline:'none', fontFamily:'inherit', marginBottom:'.5rem', boxSizing:'border-box' }}
+          />
+          <input ref={fileRef} type="file" accept="image/*" style={{ display:'none' }}
+            onChange={e => { handleImageUpload(e.target.files[0]); e.target.value=''; }} />
+          <button onClick={() => fileRef.current.click()} disabled={uploading} style={{
+            background:'#1a1a1a', color:'#fff', border:'none',
+            borderRadius:'6px', padding:'.4rem .85rem',
+            fontSize:'.78rem', cursor:'pointer', fontFamily:'inherit'
+          }}>
+            {uploading ? '업로드 중...' : '📎 이미지 선택'}
+          </button>
+        </div>
+      )}
+
+      {/* 첨부된 이미지들 */}
+      {myMedia.length > 0 && (
+        <div style={{ marginLeft:'1.5rem', marginBottom:'.5rem', display:'flex', flexWrap:'wrap', gap:'.5rem' }}>
+          {myMedia.map(media => (
+            <div key={media.id} style={{ position:'relative' }}>
+              <img
+                src={media.url}
+                alt={media.caption || '이미지'}
+                style={{ width:'72px', height:'72px', objectFit:'cover', borderRadius:'8px', display:'block', border:'1px solid #e2ddd5' }}
+              />
+              {media.caption && (
+                <div style={{ fontSize:'.65rem', color:'#6b6560', textAlign:'center', marginTop:'2px', maxWidth:'72px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                  {media.caption}
+                </div>
+              )}
+              <button
+                onClick={() => handleDeleteMedia(media.id)}
+                style={{ position:'absolute', top:'-6px', right:'-6px', background:'#ff3b3b', color:'#fff', border:'none', borderRadius:'50%', width:'18px', height:'18px', cursor:'pointer', fontSize:'.65rem', display:'flex', alignItems:'center', justifyContent:'center', lineHeight:1 }}
+              >×</button>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* 자식 노드 */}
       {hasChildren && open && (
-        <div style={{
-          borderLeft:'2px solid #e2ddd5',
-          marginLeft:'.75rem', paddingLeft:'.2rem', marginBottom:'.2rem'
-        }}>
+        <div style={{ borderLeft:'2px solid #e2ddd5', marginLeft:'.75rem', paddingLeft:'.2rem', marginBottom:'.2rem' }}>
           {node.children.map(child => (
             <TreeNode
               key={child.id}
@@ -204,6 +231,10 @@ function TreeNode({ node, depth = 0, searchQuery, onNodeDelete, onNodeEdit }) {
               searchQuery={searchQuery}
               onNodeDelete={onNodeDelete}
               onNodeEdit={onNodeEdit}
+              manualId={manualId}
+              storeId={storeId}
+              nodeMedia={nodeMedia}
+              onMediaUpdate={onMediaUpdate}
             />
           ))}
         </div>
