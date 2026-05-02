@@ -9,32 +9,40 @@ export default function AudioUpload({ storeId, onComplete }) {
   const [progress, setProgress] = useState('');
   const fileRef = useRef();
 
-  const handleFile = async (file) => {
-    if (!file) return;
-    setStep('uploading');
-    setProgress('파일 업로드 중...');
+  const handleFile = async (files) => {
+  if (!files || files.length === 0) return;
+  setStep('uploading');
+
+  const allRawTexts = [];
+  const allOrganized = [];
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    setProgress(`음성 인식 중... (${i + 1}/${files.length})`);
 
     const formData = new FormData();
     formData.append('audio', file);
 
     try {
-      setProgress('음성 인식 중... (파일 크기에 따라 10~30초 소요)');
       const res = await uploadAudio(storeId, formData);
-      setRawText(res.data.rawText);
-      setOrganized(res.data.organizedText);
-      setStep('preview');
+      allRawTexts.push(res.data.rawText);
+      allOrganized.push(res.data.organizedText);
     } catch (err) {
-      alert('변환 실패: ' + (err.response?.data?.error || err.message));
-      setStep('idle');
+      alert(`${file.name} 변환 실패: ` + (err.response?.data?.error || err.message));
     }
-  };
+  }
+
+  setRawText(allRawTexts.join('\n\n---\n\n'));
+  setOrganized(allOrganized.join('\n\n'));
+  setStep('preview');
+};
 
   const handleDrop = (e) => {
-    e.preventDefault();
-    setDragOver(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
-  };
+  e.preventDefault();
+  setDragOver(false);
+  const files = e.dataTransfer.files;
+  if (files.length > 0) handleFile(files);
+};
 
   const handleSave = () => {
     onComplete(organized);
@@ -84,8 +92,9 @@ export default function AudioUpload({ storeId, onComplete }) {
             ref={fileRef}
             type="file"
             accept=".mp3,.mp4,.wav,.m4a,.webm,.ogg"
+            multiple
             style={{ display: 'none' }}
-            onChange={e => handleFile(e.target.files[0])}
+            onChange={e => handleFile(e.target.files)}
           />
         </div>
       )}
