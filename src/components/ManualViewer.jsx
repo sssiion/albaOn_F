@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { updateManual, deleteManual, moveManual } from '../api/manuals';
 import { getCategories, addCategory, deleteCategory, updateCategory } from '../api/categories';
 import { uploadNodeMedia, deleteNodeMedia } from '../api/media';
@@ -628,6 +628,10 @@ export default function ManualViewer({ storeId, manuals, onUpdate }) {
                           searchQuery={searchQuery}
                           onNodeDelete={(nodeLabel) => handleNodeDelete(m, nodeLabel)}
                           onNodeEdit={(nodeLabel, newLabel) => handleNodeEdit(m, nodeLabel, newLabel)}
+                          manualId={m.id}
+                          storeId={storeId}
+                          nodeMedia={m.manual_node_media || []}
+                          onMediaUpdate={onUpdate}
                         />
                       ))
                     ) : (
