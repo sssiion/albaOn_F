@@ -12,7 +12,8 @@ export default function AudioUpload({ storeId, onComplete }) {
 
 const handleAddFile = (newFiles) => {
   if (!newFiles || newFiles.length === 0) return;
-  setFiles(prev => [...prev, ...Array.from(newFiles)]);
+  const arr = Array.from(newFiles);
+  setFiles(prev => [...prev, ...arr]);
 };
 
 const handleRemoveFile = (index) => {
@@ -82,11 +83,14 @@ const handleStart = async () => {
 };
 
   const handleSave = () => {
-    onComplete(organized);
-    setStep('idle');
-    setOrganized('');
-    setRawText('');
-  };
+  onComplete(organized);
+  setStep('idle');
+  setOrganized('');
+  setRawText('');
+  setFiles([]);
+  setInputKey(k => k + 1); // ← 추가
+};
+  const [inputKey, setInputKey] = useState(0);
 
   return (
     <div style={{ marginBottom: '1.5rem' }}>
@@ -118,12 +122,16 @@ const handleStart = async () => {
         파일을 여러 번 눌러서 추가할 수 있어요
       </div>
       <input
-        ref={fileRef}
-        type="file"
-        accept=".mp3,.mp4,.wav,.m4a,.webm,.ogg"
-        style={{ display: 'none' }}
-        onChange={e => { handleAddFile(e.target.files); e.target.value = ''; }}
-      />
+          key={inputKey}
+          ref={fileRef}
+          type="file"
+          accept=".mp3,.mp4,.wav,.m4a,.webm,.ogg"
+          style={{ display: 'none' }}
+          onChange={e => {
+            handleAddFile(e.target.files);
+            setInputKey(k => k + 1);
+          }}
+        />
     </div>
 
     {/* 선택된 파일 목록 */}
