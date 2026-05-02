@@ -156,13 +156,10 @@ export default function StoreDetail() {
         {tab === 'manual' && (
           <>
             <AudioUpload
-            storeId={storeId}
-            onComplete={(text) => {
-                setForm(f => ({ ...f, content: text, title: '녹음 자동 정리' }));
-                // 자동으로 저장까지
-                createManual(storeId, { title: '녹음 자동 정리', content: text })
-                .then(() => loadManuals());
-            }}
+              storeId={storeId}
+              onComplete={(text) => {
+                setForm(f => ({ ...f, content: text }));
+              }}
             />
             <div style={{
               background:'#fff', border:'1px solid #e2ddd5',
