@@ -4,7 +4,7 @@ import { getStore } from '../api/stores';
 import { getChatLogs, reanswer } from '../api/chat';
 import AudioUpload from '../components/AudioUpload';
 import ManualViewer from '../components/ManualViewer';
-import { getManuals, createManual, deleteManual, updateManual, getBasicManuals, createBasicManual } from '../api/manuals';
+import { getManuals, createManual, deleteManual, updateManual, getBasicManuals, createBasicManual, askManual } from '../api/manuals';
 import BasicManualEditor from '../components/BasicManualEditor';
 
 export default function StoreDetail() {
@@ -20,6 +20,9 @@ export default function StoreDetail() {
 
   const [basicManuals, setBasicManuals] = useState([]);
   const [basicForm, setBasicForm]       = useState({ content: '', editingId: null });
+  const [askPhase, setAskPhase]         = useState('idle'); // 'idle' | 'answering'
+  const [askQuestions, setAskQuestions] = useState([]);
+  const [askAnswers, setAskAnswers]     = useState([]);
   
   const loadBasicManuals = async () => {
     const res = await getBasicManuals(storeId);
@@ -55,27 +58,53 @@ export default function StoreDetail() {
   };
 
   const handleSave = async (e) => {
-  e.preventDefault();
-  if (!form.content.trim()) return;
-  setLoading(true);
+    e.preventDefault();
+    if (!form.content.trim()) return;
+    setLoading(true);
 
-  try {
-    if (form.editingId) {
-      // 수정 모드 — 기존 매뉴얼 업데이트
-      await updateManual(form.editingId, { content: form.content });
-    } else {
-      // 새 매뉴얼 추가
-      await createManual(storeId, { content: form.content });
+    try {
+      if (form.editingId) {
+        await updateManual(form.editingId, { content: form.content });
+        setForm({ content: '', editingId: null });
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+        await loadManuals();
+      } else {
+        const res = await askManual(storeId, { content: form.content, bizType: store?.biz_type || '' });
+        if (res.data.needsMore) {
+          setAskQuestions(res.data.questions);
+          setAskAnswers(res.data.questions.map(() => ''));
+          setAskPhase('answering');
+        } else {
+          await createManual(storeId, { content: form.content, bizType: store?.biz_type || '', answers: [] });
+          setForm({ content: '', editingId: null });
+          setSaved(true);
+          setTimeout(() => setSaved(false), 2000);
+          await loadManuals();
+        }
+      }
+    } catch (err) {
+      alert('저장 실패: ' + err.message);
     }
-    setForm({ content: '', editingId: null });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-    await loadManuals();
-  } catch (err) {
-    alert('저장 실패: ' + err.message);
-  }
-  setLoading(false);
-};
+    setLoading(false);
+  };
+
+  const handleFinalSave = async () => {
+    setLoading(true);
+    try {
+      await createManual(storeId, { content: form.content, bizType: store?.biz_type || '', answers: askAnswers });
+      setForm({ content: '', editingId: null });
+      setAskPhase('idle');
+      setAskQuestions([]);
+      setAskAnswers([]);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+      await loadManuals();
+    } catch (err) {
+      alert('저장 실패: ' + err.message);
+    }
+    setLoading(false);
+  };
 
   const handleDelete = async (manualId) => {
     if (!confirm('삭제할까요?')) return;
@@ -189,6 +218,52 @@ export default function StoreDetail() {
   </button>
 </form>
             </div>
+
+            {/* 보완 질문 단계 */}
+            {askPhase === 'answering' && (
+              <div style={{
+                background:'#fff', border:'1.5px solid #1a1a1a',
+                borderRadius:'14px', padding:'1.5rem', marginBottom:'1.5rem'
+              }}>
+                <div style={{ fontWeight:700, fontSize:'.95rem', marginBottom:'1rem' }}>
+                  조금 더 알려주세요 🙋
+                </div>
+                {askQuestions.map((q, i) => (
+                  <div key={i} style={{ marginBottom:'1rem' }}>
+                    <div style={{ fontSize:'.88rem', fontWeight:600, marginBottom:'.4rem', color:'#1a1a1a' }}>
+                      {i + 1}. {q}
+                    </div>
+                    <textarea
+                      value={askAnswers[i]}
+                      onChange={e => {
+                        const next = [...askAnswers];
+                        next[i] = e.target.value;
+                        setAskAnswers(next);
+                      }}
+                      rows={2}
+                      placeholder="답변을 입력해주세요..."
+                      style={{
+                        width:'100%', padding:'.65rem .9rem', borderRadius:'8px',
+                        border:'1px solid #e2ddd5', fontSize:'.88rem', outline:'none',
+                        resize:'vertical', fontFamily:'inherit', lineHeight:1.6, boxSizing:'border-box'
+                      }}
+                    />
+                  </div>
+                ))}
+                <div style={{ display:'flex', gap:'.5rem' }}>
+                  <button onClick={handleFinalSave} disabled={loading} style={{
+                    flex:1, background:'#1a1a1a', color:'#fff', fontWeight:700,
+                    padding:'.8rem', borderRadius:'8px', border:'none', cursor:'pointer', fontFamily:'inherit'
+                  }}>
+                    {loading ? '저장 중...' : '저장하기'}
+                  </button>
+                  <button onClick={() => { setAskPhase('idle'); setAskQuestions([]); setAskAnswers([]); }} style={{
+                    padding:'.8rem 1.25rem', borderRadius:'8px',
+                    border:'1px solid #e2ddd5', background:'transparent', cursor:'pointer', fontFamily:'inherit'
+                  }}>취소</button>
+                </div>
+              </div>
+            )}
 
             {/* 저장된 매뉴얼 */}
             <h3 style={{ fontWeight:700, fontSize:'.95rem', marginBottom:'.85rem' }}>

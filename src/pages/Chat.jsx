@@ -43,7 +43,7 @@ export default function Chat() {
       const res = await sendMessage(storeId, question, workerName);
       setMessages(prev => [...prev, {
         role: 'ai',
-        content: res.data.answer,
+        answers: res.data.answers,
         isAnswered: res.data.isAnswered
       }]);
     } catch {
@@ -155,15 +155,30 @@ export default function Chat() {
               border: msg.role === 'ai' ? '1px solid #e2ddd5' : 'none',
               boxShadow: '0 1px 4px rgba(0,0,0,.06)'
             }}>
-              {msg.content}
-              {msg.role === 'ai' && msg.isAnswered === false && (
-                <div style={{
-                  marginTop:'.5rem', fontSize:'.75rem',
-                  color:'#a09b94', borderTop:'1px solid #e2ddd5',
-                  paddingTop:'.4rem'
-                }}>
-                  ⚠️ 점주님께 알림이 전송됐어요
-                </div>
+              {msg.role === 'user' || msg.content ? (
+                msg.content
+              ) : (
+                <>
+                  {(!msg.isAnswered || !msg.answers || msg.answers.length === 0) ? (
+                    <span>매뉴얼에 없는 내용이에요. 담당자에게 확인해주세요 😊</span>
+                  ) : (
+                    msg.answers.map((a, i) => (
+                      <div key={i} style={{ marginBottom: i < msg.answers.length - 1 ? '.75rem' : 0 }}>
+                        <div style={{ fontWeight:700, fontSize:'.85rem', marginBottom:'.2rem' }}>{a.title}</div>
+                        <div>{a.content}</div>
+                      </div>
+                    ))
+                  )}
+                  {msg.isAnswered === false && (
+                    <div style={{
+                      marginTop:'.5rem', fontSize:'.75rem',
+                      color:'#a09b94', borderTop:'1px solid #e2ddd5',
+                      paddingTop:'.4rem'
+                    }}>
+                      ⚠️ 점주님께 알림이 전송됐어요
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

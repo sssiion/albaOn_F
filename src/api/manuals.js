@@ -5,6 +5,7 @@ import api from './index';
 
 export const getManuals   = (storeId)             => api.get(`/api/manuals/${storeId}`);
 export const createManual = (storeId, data)        => api.post(`/api/manuals/${storeId}`, data);
+export const askManual    = (storeId, data)        => api.post(`/api/manuals/${storeId}/ask`, data);
 export const updateManual = (manualId, data) =>
   api.put(`/api/manuals/edit/${manualId}`, data);
 export const deleteManual = (storeId, manualId)    => api.delete(`/api/manuals/${storeId}/${manualId}`);
